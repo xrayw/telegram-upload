@@ -1,0 +1,10 @@
+[project]
+name = "tgupload"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "cryptg>=0.5.1",
+    "telethon>=1.40.0",
+]
