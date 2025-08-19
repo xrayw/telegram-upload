@@ -9,4 +9,6 @@ wheels/
 # Virtual environments
 .venv
 .ruff_cache
+
+# tg account
 upload.session*
