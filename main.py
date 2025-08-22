@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import json
+import argparse
 import asyncio
 from tkinter import Tk, filedialog
 from telethon import TelegramClient
@@ -11,11 +12,11 @@ ME = "me"
 CLEAR_PREV_LINE = "\033[F\033[K"
 
 
-async def upload(files):
+async def upload(files, concurrency: int = 5):
     print(f"total: {len(files)}")
     print("done : 0")
 
-    semaphore = asyncio.Semaphore(5)
+    semaphore = asyncio.Semaphore(concurrency)
     ongoing: list[list[str]] = []
     done_cnt = 0
     rendered_cnt = 0
@@ -125,11 +126,15 @@ if __name__ == "__main__":
         print("No files selected.")
         exit(1)
 
+    parser = argparse.ArgumentParser(description="Upload files to Telegram using Telethon.")
+    parser.add_argument('-c', '--count', type=int, default=5, help='Number of concurrent uploads (default: 5)')
+    args = parser.parse_args()
+
     client = TelegramClient("upload", appid, apphash)
     client.start()
     with client:
         try:
-            client.loop.run_until_complete(upload(files))
+            client.loop.run_until_complete(upload(files, args.count))
         except Exception as e:
             print(f"An error occurred: {e}")
 
