@@ -13,3 +13,4 @@ wheels/
 # tg account
 upload.session*
 failed.json*
+.tg_cache*

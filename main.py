@@ -111,21 +111,19 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--count', type=int, default=5, help='Number of concurrent uploads (default: 5)')
     args = parser.parse_args()
 
-    HOME_DIR = os.path.expanduser("~")
-
     after = None
-    if not os.path.exists(HOME_DIR + "/.tg_cache"):
+    if not os.path.exists(".tg_cache"):
         appid = input("  Please input the appid:")
         apphash = input("Please input the apphash:")
 
         def saveid():
-            with open(HOME_DIR + "/.tg_cache", "w") as f:
+            with open(".tg_cache", "w") as f:
                 json.dump({"appid": appid, "apphash": apphash}, f)
-            print("Saved appid and apphash to ~/.tg_cache")
+            print("Saved appid and apphash to .tg_cache")
 
         after = saveid
     else:
-        with open(HOME_DIR + "/.tg_cache", "r") as f:
+        with open(".tg_cache", "r") as f:
             data = json.loads(f.read())
             appid = data.get("appid")
             apphash = data.get("apphash")
