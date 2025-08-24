@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import json
+import signal
 import argparse
 import asyncio
 from tkinter import Tk, filedialog
@@ -11,9 +12,10 @@ MB = 1024 * 1024
 ME = "me"
 CLEAR_PREV_LINE = "\033[F\033[K"
 FAILED_JSON = 'failed.json'
+UPLOADED = set()
 
 
-async def upload(files, concurrency: int = 5) -> list[str]:
+async def upload(files, concurrency: int = 5):
     print(f"total: {len(files)}")
     print("done : 0")
 
@@ -26,7 +28,6 @@ async def upload(files, concurrency: int = 5) -> list[str]:
         for idx, f in enumerate(ongoing):
             if f[0] == filepath:
                 return (idx, f)
-        return None
 
     def clear_ongoing():
         for _ in range(rendered_cnt):
@@ -39,8 +40,6 @@ async def upload(files, concurrency: int = 5) -> list[str]:
         rendered_cnt = len(ongoing)
 
     async def upload_one(idx, filepath):
-        """return filepath if failed """
-
         filename = os.path.split(filepath)[1]
         start, upload_bytes = time.time(), 0
 
@@ -76,20 +75,16 @@ async def upload(files, concurrency: int = 5) -> list[str]:
                     progress_callback=callback,
                     silient=True,
                 )
-            except Exception:
-                return filepath
+
+                UPLOADED.add(filepath)
             finally:
                 t = get_ongoing_file_item(filepath)
                 if t:
                     del ongoing[t[0]]
 
-    failed = []
     for task in asyncio.as_completed([upload_one(i, filepath) for i, filepath in enumerate(files)]):
         try:
-            fp = await task
-            if fp:
-                failed.append(fp)
-                continue
+            await task
             done_cnt += 1
 
             clear_ongoing()
@@ -98,8 +93,8 @@ async def upload(files, concurrency: int = 5) -> list[str]:
             print(f"done : {done_cnt}")
             render_ongoing_files()
         except Exception:
-            pass
-    return failed
+            clear_ongoing()
+            render_ongoing_files()
 
 
 def clear_prev_line():
@@ -159,24 +154,31 @@ if __name__ == "__main__":
         print("No files selected.")
         exit(1)
 
+    def handle(*args):
+        exit(0)
+
+    signal.signal(signal.SIGINT, handle)
+
     client = TelegramClient("upload", appid, apphash)
     client.start()
-    with client:
-        try:
-            failed = client.loop.run_until_complete(upload(files, args.count))
-            if failed:
-                print(f"Failed to upload {len(failed)} files. See '{FAILED_JSON}' for details.")
-                for f in failed:
-                    print(os.path.split(f)[1])
+    try:
+        with client:
+            client.loop.run_until_complete(upload(files, args.count))
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        failed = set(files) - UPLOADED
+        if failed:
+            print(f"Failed to upload {len(failed)} files. See '{FAILED_JSON}' for details.")
+            for f in failed:
+                print(os.path.split(f)[1])
 
-                with open(FAILED_JSON, 'w') as f:
-                    json.dump(failed, f, indent=2)
-            else:
-                if reupload:
-                    os.remove(FAILED_JSON)
-                    print(f"All files reuploaded successfully. '{FAILED_JSON}' was removed.")
-        except Exception as e:
-            print(f"An error occurred: {e}")
+            with open(FAILED_JSON, 'w') as f:
+                json.dump(list(failed), f, indent=2)
+        else:
+            if reupload:
+                os.remove(FAILED_JSON)
+                print(f"All files reuploaded successfully. '{FAILED_JSON}' was removed.")
 
     if after:
         after()
