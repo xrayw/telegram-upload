@@ -7,6 +7,7 @@ import argparse
 import asyncio
 from tkinter import Tk, filedialog
 from telethon import TelegramClient
+from util import gen_tags
 
 MB = 1024 * 1024
 ME = "me"
@@ -70,7 +71,7 @@ async def upload(files, concurrency: int = 5):
                 await client.send_file(
                     ME,
                     filepath,
-                    caption=filename,
+                    caption=gen_tags(os.path.splitext(filename)[0]),
                     supports_streaming=True,
                     progress_callback=callback,
                     silient=True,

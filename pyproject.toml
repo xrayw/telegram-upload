@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "cryptg>=0.5.1",
+    "hanlp>=2.1.1",
     "telethon>=1.40.0",
 ]
