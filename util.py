@@ -1,7 +1,7 @@
 import jieba
 
 def gen_tags(text):
-    tokens = jieba.cut(text, cut_all=True)
+    tokens = list(jieba.cut(text, cut_all=True))
     if not tokens:
         return text
     if not text.startswith("#"):
