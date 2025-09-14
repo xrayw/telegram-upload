@@ -1,14 +1,10 @@
 
 import os
 import sys
-import time
 import json
 import signal
 import argparse
-import asyncio
 from tkinter import Tk, filedialog
-from telethon import TelegramClient
-from fastupload import upload_file
 from tg_upload_client import TelegramUploadClient
 from util import gen_tags
 
@@ -24,24 +20,6 @@ UPLOADED = set()
 async def upload(files, concurrency: int = 5):
     print(f"total: {len(files)}")
     print("done : 0")
-
-    ongoing: list[list[str]] = []
-    rendered_cnt = 0
-
-    def get_ongoing_file_item(filepath) -> tuple[int, list[str]] | None:
-        for idx, f in enumerate(ongoing):
-            if f[0] == filepath:
-                return (idx, f)
-
-    def clear_ongoing():
-        for _ in range(rendered_cnt):
-            clear_prev_line()
-
-    def render_ongoing_files():
-        for f in ongoing:
-            print(f[1])
-        nonlocal rendered_cnt
-        rendered_cnt = len(ongoing)
 
     async def upload_one(idx, filepath):
         filename = os.path.split(filepath)[1]
