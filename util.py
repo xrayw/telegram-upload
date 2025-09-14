@@ -1,10 +1,7 @@
-import hanlp
-
-HanLP = hanlp.load(hanlp.pretrained.mtl.CLOSE_TOK_POS_NER_SRL_DEP_SDP_CON_ELECTRA_SMALL_ZH)
+import jieba
 
 def gen_tags(text):
-    words = HanLP(text)
-    tokens = words.get('tok/fine')
+    tokens = jieba.cut(text, cut_all=True)
     if not tokens:
         return text
     if not text.startswith("#"):
