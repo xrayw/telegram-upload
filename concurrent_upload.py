@@ -17,7 +17,7 @@ FAILED_JSON = 'failed.json'
 UPLOADED = set()
 
 
-async def upload(files, concurrency: int = 5):
+async def upload(files):
     print(f"total: {len(files)}")
     print("done : 0")
 
@@ -31,10 +31,17 @@ async def upload(files, concurrency: int = 5):
             print(f'\033[K {upload_bytes / MB:.2f}-{total / MB:.2f} M {upload_bytes / total * 100:6.2f}%', end='\r')
 
         with open(filepath, 'rb') as f:
-            # tgfile = await upload_file(client, f, callback)
-            tgfile = await client.upload_file2(f, part_size_kb=512, file_name=filename, progress_callback=callback)
-            # tgfile.name = filename
+            tgfile = await client.upload_file(f, part_size_kb=512, file_name=filename, progress_callback=callback)
             await client.send_file(ME, tgfile, caption=gen_tags(os.path.splitext(filename)[0]), supports_streaming=True, silient=True)
+            # await client.send_file(
+            #     ME,
+            #     filepath,
+            #     caption=gen_tags(os.path.splitext(filename)[0]),
+            #     supports_streaming=True,
+            #     progress_callback=callback,
+            #     silient=True,
+            #     part_size_kb=512
+            # )
 
     for p in files:
         await upload_one(0, p)
@@ -110,7 +117,7 @@ if __name__ == "__main__":
     client.start()
     try:
         with client:
-            client.loop.run_until_complete(upload(files, args.count))
+            client.loop.run_until_complete(upload(files))
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:

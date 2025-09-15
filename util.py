@@ -8,4 +8,4 @@ def gen_tags(text):
         text = '#' + text
     if len(tokens) == 1:
         return text
-    return '\n'.join((text, ' '.join(t if t.startswith('#') else '#' + t for t in tokens)))
+    return '\n'.join((text, ' '.join(t if t.startswith('#') else '#' + t for t in tokens if t.strip())))

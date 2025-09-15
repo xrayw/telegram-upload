@@ -15,21 +15,24 @@ class TelegramUploadClient(TelegramClient):
         self.upload_semaphore = asyncio.Semaphore(concurrent)
         super().__init__(*args, **kwargs)
 
-    async def upload_file2(
-            self: 'TelegramUploadClient',
-            file: 'hints.FileLike',
-            *,
-            part_size_kb: float = None,
-            file_name: str = None,
-            key: bytes = None,
-            iv: bytes = None,
-            progress_callback: 'hints.ProgressCallback' = None
+    async def upload_file(
+        self: 'TelegramUploadClient',
+        file: 'hints.FileLike',
+        *,
+        part_size_kb: float | None = None,
+        file_size: int | None = None,
+        file_name: str | None = None,
+        use_cache: type | None = None,
+        key: bytes | None = None,
+        iv: bytes | None = None,
+        progress_callback: 'hints.ProgressCallback | None' = None
     ) -> 'types.TypeInputFile':
         if isinstance(file, (types.InputFile, types.InputFileBig)):
             return file  # Already uploaded
 
         async with helpers._FileStream(file) as stream:
             file_size = stream.file_size
+            assert file_size is not None
 
             if not part_size_kb:
                 part_size_kb = utils.get_appropriated_part_size(file_size)
@@ -46,17 +49,13 @@ class TelegramUploadClient(TelegramClient):
             if not file_name:
                 file_name = stream.name or str(file_id)
 
-            if not os.path.splitext(file_name)[-1]:
+            if file_name and  not os.path.splitext(file_name)[-1]:
                 file_name += utils._get_extension(stream)
 
-            # Determine whether the file is too big (over 10MB) or not
-            # Telegram does make a distinction between smaller or larger files
             is_big = file_size > 10 * 1024 * 1024
             hash_md5 = hashlib.md5()
 
             part_count = (file_size + part_size - 1) // part_size
-            # self._log[__name__].info('Uploading file of %d bytes in %d chunks of %d',
-            #                         file_size, part_count, part_size)
 
             pos = 0
             tasks = []
@@ -69,8 +68,7 @@ class TelegramUploadClient(TelegramClient):
                         'file descriptor returned {}, not bytes (you must '
                         'open the file in bytes mode)'.format(type(part)))
 
-                # `file_size` could be wrong in which case `part` may not be
-                # `part_size` before reaching the end.
+                # `file_size` could be wrong in which case `part` may not be `part_size` before reaching the end.
                 if len(part) != part_size and part_index < part_count - 1:
                     raise ValueError(
                         'read less than {} before reaching the end; either '
@@ -115,13 +113,11 @@ class TelegramUploadClient(TelegramClient):
                               progress_callback: Optional['hints.ProgressCallback'] = None) -> None:
         try:
             result = await self(request)
-            if result:
-                self._log[__name__].debug('Uploaded %d/%d',
-                                          part_index + 1, part_count)
+            # if not result:
+            #     raise RuntimeError(f'upload part {part_index} failed')
             if progress_callback:
                 await helpers._maybe_await(progress_callback(part_size, file_size))
             else:
-                raise RuntimeError(
-                    'Failed to upload file part {}.'.format(part_index))
+                raise RuntimeError( f'Failed to upload file part {part_index}')
         finally:
             self.upload_semaphore.release()
