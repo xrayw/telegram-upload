@@ -1,3 +1,6 @@
+#### Support GUI file batch selection
+
+
 #### Upload
 > uv run main.py
 
