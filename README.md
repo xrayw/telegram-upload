@@ -7,6 +7,7 @@
 </br>
 </br>
 </br>
+
 **Replace the sequential upload to concurrent upload. and only use one connection at a time**
 
 And most of them come from https://github.com/Nekmo/telegram-upload/blob/master/telegram_upload/client/telegram_upload_client.py
